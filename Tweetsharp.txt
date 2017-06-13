@@ -1,0 +1,68 @@
+using TweetSharp;
+
+public ActionResult Search()
+        {
+            
+            //string query = "#test";
+
+	    //====Create an app on twitter=======
+
+            string cunsumer_key = "";
+            string cunsumer_key_secret = "";
+            string access_token = "";
+            string access_token_secret = "";
+
+            TwitterService service = new TwitterService(cunsumer_key, cunsumer_key_secret, access_token, access_token_secret);
+            
+            service.SendTweet(new SendTweetOptions { Status = query }, (tweet, response) =>
+            {
+            if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"<{DateTime.Now}> - Tweet SEnt!");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"<ERROR>");
+                    Console.ResetColor();
+                }
+            });
+            
+
+            //// Step 1 - Retrieve an OAuth Request Token
+            var service = new TwitterService(cunsumer_key, cunsumer_key_secret);
+            OAuthRequestToken requestToken = service.GetRequestToken();
+
+            //// Step 2 - Redirect to the OAuth Authorization URL
+            Uri uri = service.GetAuthorizationUri(requestToken);
+            Process.Start(uri.ToString());
+
+            //// Step 3 - Exchange the Request Token for an Access Token
+            string verifier = "tweets"; // <-- This is input into your application by your user
+            OAuthAccessToken access = service.GetAccessToken(requestToken, verifier);
+            
+            service.AuthenticateWith(access_token, access_token_secret);
+            TwitterSearchResult tweets = service.Search(new SearchOptions { Q = "#Orlando", Lang = "en" });
+            IEnumerable<TwitterStatus> status = tweets.Statuses;
+            foreach (var item in status)
+            {
+
+
+                Response.Write(item.User.ScreenName + " " + "Says:" + "\n" + item.Text + "\n" + "ReTweeted:" + " " + item.RetweetCount);
+                Response.Write("<br>");
+
+                tblUser newUser = new tblUser()
+                {
+                    Username = item.User.ScreenName,
+                    Tweet = item.Text
+
+                };
+                _db.tblUsers.Add(newUser);               
+
+            }
+            _db.SaveChanges();
+            return View();
+            }
+}
